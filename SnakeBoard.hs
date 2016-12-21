@@ -23,23 +23,28 @@ import qualified Snake as S
 import System.Random(randomRIO)
 import System.Directory(doesFileExist)
 
-data World = World {snake       :: S.Snake,
-                    foodPos     :: S.Coord,
-                    highScore   :: (Int, Int), 
-                    height      :: Int,
-                    width       :: Int,
-                    paused      :: Bool,
-                    restartMode :: Bool,
-                    original    :: Bool,
-                    colorInd    :: Int}
+data World = World {snake       :: S.Snake, -- The Snake
+                    foodPos     :: S.Coord, -- The position of the snake's food to "eat"
+                    highScore   :: (Int, Int), --The highScores for both versions
+                    height      :: Int, -- Height of the coordinate system
+                    width       :: Int, -- Width of the coordinate sytem
+                    paused      :: Bool, -- Is the game currently paused?
+                    restartMode :: Bool, -- Is the game in the main menu?
+                    original    :: Bool, -- Are we playing the original version (1.0)?
+                    colorInd    :: Int, --  Index of the background color. Can be used for an own list of colors
+                    speed       :: Float, -- 
+                    speedCount  :: Float -- 
+                   }
 
 --Advances the world. Returns Nothing, when moveSafe fails. The first bool describes if a food point has been eaten in the step
 advance :: World -> Maybe (Bool, World)
-advance w = fmap (\s -> (S.isOn (foodPos w) $ snake w, w{snake=s})) $ moveSafe (original w) (height w) (width w) (snake w)
+advance w = fmap (\s -> (S.isOn (foodPos w) $ snake w, w{snake=s, speedCount=0})) $ moveSafe (original w) (height w) (width w) (snake w)
 
 --IO expansion of advance. Creates a new world, when advance returns Nothing
-advanceIO :: World -> IO World
-advanceIO w = if paused w || restartMode w then return w else case advance w of
+advanceIO :: Float -> World -> IO World
+advanceIO f w | paused w || restartMode w = return w
+              | not $ readyToMove w = return w{speedCount=speedCount w + f}
+              | otherwise = case advance w of
   Nothing -> do
     nS <- randCoord (height w) (width w)
     let newSnake = S.new nS
@@ -71,7 +76,7 @@ moveSafe or h w s = if S.isOn newPos s || (or && outOfBounds) then Nothing else 
 
 --Creates a new World with starting position of the snake, first food position, and width and height. Currently not in use
 newWorld :: S.Coord -> S.Coord -> Int -> Int -> World
-newWorld sp fp h w = World (S.new sp) fp (0, 0) h w False True True 0
+newWorld sp fp h w = World (S.new sp) fp (0, 0) h w False True True 0 0.1 0
 
 --Creates a new world, with random positions. Reads saved data from config file.
 newWorldIO :: FilePath -> Int -> Int -> IO World
@@ -82,7 +87,7 @@ newWorldIO fp h w = do
   mHS <- readFileMaybe fp
   case mHS of
     Nothing -> return $ newWorld sp nFP h w
-    (Just l) -> return.(\[hs1, hs2, cInd, or] -> World nS nFP (hs1, hs2) h w False True (toEnum or) cInd).(map read :: [String] -> [Int]).(take 4).lines $ l
+    (Just l) -> return.(\[hs1, hs2, cInd, or] -> World nS nFP (hs1, hs2) h w False True (toEnum or) cInd 0.05 0).(map read :: [String] -> [Int]).(take 4).lines $ l
 
 --Saves data into config file
 saveWorld :: FilePath -> World -> IO ()
@@ -132,3 +137,6 @@ setHighScore nHS w = w{highScore=newHS} where
 --Changes the index of the color
 changeColor :: Int -> World -> World
 changeColor i w = w{colorInd=mod (colorInd w + 1) i}
+
+readyToMove :: World -> Bool
+readyToMove w = speed w <= speedCount w

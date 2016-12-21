@@ -24,9 +24,7 @@ renderFoodPoint :: World -> Picture
 renderFoodPoint = coordToRectangle.foodPos
 
 renderBorders :: World -> Picture
-renderBorders world = line [(-displaySize, -displaySize), (-displaySize, displaySize), (displaySize, displaySize), (displaySize,-displaySize), (-displaySize, -displaySize)]  where
-  h = fromIntegral $ height world
-  w = fromIntegral $ width world
+renderBorders world = line [(-displaySize, -displaySize), (-displaySize, displaySize), (displaySize, displaySize), (displaySize,-displaySize), (-displaySize, -displaySize)]
 
 renderWorld :: World -> IO Picture
 renderWorld w = return $ pictures $ [color (currentColor w) $ rectangleSolid 2000 2000, renderSnake w, renderFoodPoint w, renderBorders w, renderScore w, renderVersion w] ++ ps ++ rm where
@@ -49,24 +47,13 @@ renderScore w = pictures [translate 350 300 $ scale 0.4 0.4 $ text $ "Score: " +
 renderVersion :: World -> Picture
 renderVersion = (translate (-600) 300).(scale 0.3 0.3).text.("Version: " ++).(++".0").show.(+1).fromEnum.not.original
 
-mulCoords :: Int -> [Coord] -> [Coord]
-mulCoords i = concatMap (\(x, y) -> [(x', y') | x' <- [x..x+i], y' <- [y..y+i]])
-
 coordToRectangle :: Coord -> Picture
-coordToRectangle (x, y) = pictures $ map (line.(map (\(x', y') -> (x'+ fromIntegral x*worldScale-350, y' + fromIntegral y*worldScale-350)))) $ rectanglePathAlt worldScale worldScale
-
-{-
-coordToRectangle (x, y) = line $ (\l -> l ++ [head l]) $ map (\(x', y') -> ((fromIntegral x*worldScale-350)+x', (fromIntegral y*worldScale-350)+y')) $ rectanglePath worldScale worldScale
--}
-rectanglePathAlt :: Float -> Float -> [Path]
-rectanglePathAlt xS yS = map (\x -> zip (repeat x) [1..yS-1]) [1..xS-1] 
+coordToRectangle (x, y) = translate ((fromIntegral x  + 0.5) * worldScale -350) ((fromIntegral y + 0.5) * worldScale -350) $ rectangleSolid (worldScale - 2) (worldScale - 2)
 
 step :: Event -> World -> IO World
 step (EventKey (Char 'q') Down _ _) w | paused w = saveWorld configPath w >> newWorldIO configPath (height w) (width w)
                                       | not $ restartMode w = return w
-                                      | otherwise = do
-  saveWorld configPath w
-  error "Quitting Game in worst way possible" 
+                                      | otherwise = saveWorld configPath w >> error "Quitting Game in worst way possible" 
 step (EventKey k Down _ _) w = return $ f w where
   ps = paused w
   rm = restartMode w
@@ -96,6 +83,6 @@ step (EventKey k Down _ _) w = return $ f w where
 step _ s = return s
 
 main :: IO ()
-main = newWorldIO configPath 50 50 >>= \beginning -> playIO (InWindow "Snake" (1000, 800) (50, 50)) red 10 beginning renderWorld step (\_ -> advanceIO) 
+main = newWorldIO configPath 50 50 >>= \beginning -> playIO (InWindow "Snake" (1000, 800) (50, 50)) red 100 beginning renderWorld step advanceIO 
 
 
