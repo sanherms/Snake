@@ -59,10 +59,10 @@ coordToRectangle (x, y) = pictures $ map (line.(map (\(x', y') -> (x'+ fromInteg
 coordToRectangle (x, y) = line $ (\l -> l ++ [head l]) $ map (\(x', y') -> ((fromIntegral x*worldScale-350)+x', (fromIntegral y*worldScale-350)+y')) $ rectanglePath worldScale worldScale
 -}
 rectanglePathAlt :: Float -> Float -> [Path]
-rectanglePathAlt xS yS = map (\x -> zip (repeat x) [0..yS]) [0..xS] 
+rectanglePathAlt xS yS = map (\x -> zip (repeat x) [1..yS-1]) [1..xS-1] 
 
 step :: Event -> World -> IO World
-step (EventKey (Char 'q') Down _ _) w | paused w = newWorldIO configPath (height w) (width w)
+step (EventKey (Char 'q') Down _ _) w | paused w = saveWorld configPath w >> newWorldIO configPath (height w) (width w)
                                       | not $ restartMode w = return w
                                       | otherwise = do
   saveWorld configPath w

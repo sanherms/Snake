@@ -1,8 +1,24 @@
-module Snake(Snake, posFrom, new, add, inc, move, changeDir, isOn, Dir(..), Coord, len, coords, dir, curPos, turn) where
+module Snake(Snake,
+             posFrom,
+             new,
+             add,
+             inc,
+             move,
+             changeDir,
+             isOn,
+             Dir(..),
+             Coord,
+             len,
+             coords,
+             dir,
+             curPos,
+             turn) where
 
-data Snake = Snake {len :: Int, coords :: [(Int, Int)], dir :: Dir} deriving Show
+data Snake = Snake {len    :: Int,
+                    coords :: [(Int, Int)],
+                    dir    :: Dir}
 
-data Dir = N | E | S | W deriving (Show, Enum, Bounded)
+data Dir = N | E | S | W deriving (Eq, Show, Enum, Bounded)
 
 type Coord = (Int, Int)
 
@@ -17,11 +33,7 @@ new :: (Int, Int) -> Snake
 new t = Snake 1 [t] W
 
 opFrom :: Dir -> Dir -> Bool
-opFrom N S = True
-opFrom E W = True
-opFrom W E = True
-opFrom S N = True
-opFrom _ _ = False
+opFrom d1 d2 = elem (d1, d2) [(N, S), (E, W), (W, E), (S, N)]
 
 curPos :: Snake -> Coord
 curPos = last.coords
@@ -37,7 +49,7 @@ move :: Snake -> Snake
 move s = add (posFrom (curPos s) (dir s)) s
 
 changeDir :: Dir -> Snake -> Snake
-changeDir dNew (Snake l cs dOld) = Snake l cs $ if opFrom dNew dOld then dOld else dNew
+changeDir d s = s{dir= if opFrom d $ dir s then dir s else d}
 
 isOn :: Coord -> Snake -> Bool
 isOn c = (elem c).coords
