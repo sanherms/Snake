@@ -69,9 +69,10 @@ newFoodPoint h w s = do
 
 --Moves the snake. Returns Nothing if snake collides with itself or goes into the wall in version 1.0
 moveSafe :: Bool -> Int -> Int -> S.Snake -> Maybe S.Snake
-moveSafe or h w s = if S.isOn newPos s || (or && outOfBounds) then Nothing else Just $ S.add newPos s where
+moveSafe or h w s = if S.isOn newPos s || (or && outOfBounds) then Nothing else Just $ S.add newPos tempS where
   newPos = (mod x w, mod y h) 
-  (x, y) = S.posFrom (S.curPos s) (S.dir s)
+  tempS = S.continueDir s
+  (x, y) = S.posFrom (S.curPos tempS) (S.dir tempS)
   outOfBounds = x < 0 || y < 0 || x >= h || y >= w
 
 --Creates a new World with starting position of the snake, first food position, and width and height. Currently not in use
